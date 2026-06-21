@@ -53,17 +53,15 @@ async function getPageProperties(
           break
         }
         case "person": {
-          const rawUsers = val.flat()
-
-          const users = []
-          for (let i = 0; i < rawUsers.length; i++) {
-            if (rawUsers[i][0][1]) {
-              const userId = rawUsers[i][0]
+          const rawUsers = val.flat().filter((u: any) => u[0][1])
+          const users = await Promise.all(
+            rawUsers.map(async (rawUser: any) => {
+              const userId = rawUser[0]
               const res: any = await api.getUsers(userId)
               const rawResValue =
                 res?.recordMapWithRoles?.notion_user?.[userId[1]]?.value
               const resValue = rawResValue?.value ?? rawResValue
-              const user = {
+              return {
                 id: resValue?.id,
                 name:
                   resValue?.name ||
@@ -71,9 +69,8 @@ async function getPageProperties(
                   undefined,
                 profile_photo: resValue?.profile_photo || null,
               }
-              users.push(user)
-            }
-          }
+            })
+          )
           properties[schema[key].name] = users
           break
         }

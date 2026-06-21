@@ -1,6 +1,10 @@
 import { NotionAPI } from 'notion-client'
+import { getCache, setCache } from './cache'
 
 export async function getPostBlocks(id: string) {
+  const cached = getCache<Awaited<ReturnType<NotionAPI['getPage']>>>(`block:${id}`)
+  if (cached) return cached
+
   const api = new NotionAPI()
   const pageBlock = await api.getPage(id)
 
@@ -12,5 +16,6 @@ export async function getPostBlocks(id: string) {
     }
   }
 
+  setCache(`block:${id}`, pageBlock)
   return pageBlock
 }

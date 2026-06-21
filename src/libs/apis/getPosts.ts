@@ -4,12 +4,12 @@ import { idToUuid } from "notion-utils"
 import getAllPageIds from "../utils/notion/getAllPageIds"
 import getPageProperties from "../utils/notion/getPageProperties"
 import { TPosts } from "@/src/types"
-
-/**
- * @param {{ includePages: boolean }} - false: posts only / true: include pages
- */
+import { getCache, setCache } from "./cache"
 
 export async function getPosts() {
+  const cached = getCache<TPosts>("posts")
+  if (cached) return cached
+
   let id = CONFIG.notionConfig.pageId as string
   const api = new NotionAPI()
   const response = await api.getPage(id)
@@ -46,22 +46,17 @@ export async function getPosts() {
       }
     }
 
-    // Construct Data
+    // Construct Data — 모든 글의 properties를 병렬로 fetch
     const pageIds = getAllPageIds(response)
-    const data = []
-    for (let i = 0; i < pageIds.length; i++) {
-      const id = pageIds[i]
-      const properties = (await getPageProperties(id, block, schema)) || null
-      // Add fullwidth, createdtime to properties
-      const pageBlockValue = (block[id].value as any)?.value ?? block[id].value
-      properties.createdTime = new Date(
-        pageBlockValue?.created_time
-      ).toString()
-      properties.fullWidth =
-        (pageBlockValue?.format as any)?.page_full_width ?? false
-
-      data.push(properties)
-    }
+    const data = await Promise.all(
+      pageIds.map(async (id) => {
+        const properties = (await getPageProperties(id, block, schema)) || {}
+        const pageBlockValue = (block[id].value as any)?.value ?? block[id].value
+        properties.createdTime = new Date(pageBlockValue?.created_time).toString()
+        properties.fullWidth = (pageBlockValue?.format as any)?.page_full_width ?? false
+        return properties
+      })
+    )
 
     // Sort by date
     data.sort((a: any, b: any) => {
@@ -69,6 +64,8 @@ export async function getPosts() {
       const dateB: any = new Date(b?.date?.start_date || b.createdTime)
       return dateB - dateA
     })
-    return data as TPosts
+    const result = data as TPosts
+    setCache("posts", result)
+    return result
   }
 }

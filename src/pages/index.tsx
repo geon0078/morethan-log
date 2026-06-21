@@ -31,7 +31,7 @@ export async function getStaticProps() {
       revalidate: 60,
     }
   } catch (error) {
-    return
+    return { props: { tags: {}, categories: {}, posts: [] }, revalidate: 60 }
   }
 }
 
