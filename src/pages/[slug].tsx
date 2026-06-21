@@ -16,7 +16,7 @@ export async function getStaticPaths() {
 
   return {
     paths: filteredPost.map((row) => `/${row.slug}`),
-    fallback: true,
+    fallback: "blocking",
   }
 }
 
@@ -29,12 +29,12 @@ export async function getStaticProps({ params: { slug } }: any) {
 
     return {
       props: { post, blockMap },
-      revalidate: 1,
+      revalidate: 60,
     }
   } catch (error) {
     return {
       props: {},
-      revalidate: 1,
+      revalidate: 60,
     }
   }
 }
