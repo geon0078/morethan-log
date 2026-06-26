@@ -2,6 +2,7 @@ import { getTextContent, getDateValue } from "notion-utils"
 import { NotionAPI } from "notion-client"
 import { BlockMap, CollectionPropertySchemaMap } from "notion-types"
 import { customMapImageUrl } from "./customMapImageUrl"
+import CONFIG from "site.config"
 
 async function getPageProperties(
   id: string,
@@ -63,10 +64,7 @@ async function getPageProperties(
               const resValue = rawResValue?.value ?? rawResValue
               return {
                 id: resValue?.id,
-                name:
-                  resValue?.name ||
-                  `${resValue?.family_name}${resValue?.given_name}` ||
-                  undefined,
+                name: CONFIG.profile.name,
                 profile_photo: resValue?.profile_photo || null,
               }
             })
